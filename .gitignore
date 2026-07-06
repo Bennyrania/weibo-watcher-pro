@@ -1,0 +1,33 @@
+# 微博监控器 - Git 忽略规则
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 运行时数据
+logs/
+data/posts/
+data/state.json
+data/posts_index.json
+data/config.yaml
+
+# 迁移脚本（一次性，已归档）
+cleanup.py
+migrate_to_weekly.py
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统
+.DS_Store
+Thumbs.db

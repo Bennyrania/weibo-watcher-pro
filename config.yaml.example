@@ -1,0 +1,9 @@
+# 微博监控器 - 配置模板
+# 使用前复制为 data/config.yaml，填入你的 Cookie
+
+uid: "1767797335"
+cookie: "WEIBOCN_FROM=xxx; SUB=xxx; ..."
+poll_interval: 180
+max_pages: 2
+track_deletions: true
+notify_on_new: false

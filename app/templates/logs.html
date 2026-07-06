@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-3">
+        <h4 class="mb-0">📋 运行日志</h4>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="list-group">
+            {% for f in log_files %}
+            <a href="?file={{ f.name }}" class="list-group-item list-group-item-action d-flex justify-content-between {% if f.name == current_log %}active{% endif %}">
+                <small>{{ f.name }}</small>
+                <small>{{ f.size }}B</small>
+            </a>
+            {% else %}
+            <div class="list-group-item text-muted">暂无日志文件</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        {% if log_content %}
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span class="font-monospace">{{ current_log }}</span>
+                <small class="text-muted">显示最近 50000 字符</small>
+            </div>
+            <div class="card-body log-viewer">
+                <pre class="mb-0" style="font-size: 12px; line-height: 1.4; max-height: 600px; overflow-y: auto;">{{ log_content }}</pre>
+            </div>
+        </div>
+        {% elif log_files %}
+        <div class="text-center py-5 text-muted">
+            请从左侧选择一个日志文件
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            暂无日志文件。启动服务后会自动生成日志。
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

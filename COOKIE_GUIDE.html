@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Cookie 获取指南 - 微博监控器</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, "Microsoft YaHei", sans-serif; background: #f5f5f5; padding: 20px; color: #333; }
+.container { max-width: 800px; margin: 0 auto; }
+h1 { color: #1a1a1a; margin-bottom: 8px; font-size: 24px; }
+.subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+.step { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.step-num { display: inline-block; background: #1a73e8; color: #fff; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-size: 14px; font-weight: bold; margin-right: 10px; }
+.step h2 { display: inline; font-size: 18px; margin-bottom: 16px; }
+.step p, .step ol { margin-top: 12px; line-height: 1.8; font-size: 15px; }
+.step ol { padding-left: 20px; }
+.step li { margin-bottom: 8px; }
+.highlight { background: #fff3cd; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #ffc107; margin-top: 12px; font-size: 14px; }
+.highlight code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 13px; }
+.key { display: inline-block; background: #e8e8e8; border: 1px solid #ccc; border-radius: 4px; padding: 2px 8px; font-family: monospace; font-size: 13px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+
+/* 模拟 DevTools 面板 */
+.devtools { background: #1e1e1e; border-radius: 8px; margin-top: 12px; overflow: hidden; }
+.devtools-header { background: #333; padding: 8px 12px; font-size: 12px; color: #999; display: flex; gap: 8px; }
+.devtool-tab { padding: 4px 12px; background: #3c3c3c; border-radius: 4px 4px 0 0; color: #ccc; cursor: default; }
+.devtool-tab.active { background: #1e1e1e; color: #fff; }
+.devtool-tab.highlight-tab { background: #1a73e8; color: #fff; font-weight: bold; }
+.devtools-content { padding: 0; }
+.devtools-row { display: flex; border-bottom: 1px solid #333; }
+.devtools-requests { width: 35%; border-right: 1px solid #333; padding: 8px; min-height: 100px; }
+.devtools-detail { width: 65%; padding: 8px; }
+.request-item { padding: 6px 8px; font-size: 12px; color: #ccc; border-radius: 4px; margin-bottom: 2px; }
+.request-item.active { background: #094771; color: #fff; }
+.header-label { color: #569cd6; font-size: 12px; margin-bottom: 4px; }
+.header-value { color: #ce9178; font-size: 12px; word-break: break-all; }
+.header-section { margin-bottom: 12px; }
+.header-section-title { color: #888; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; }
+.arrow { display: inline-block; color: #888; margin: 0 4px; }
+
+.image-placeholder { background: #e8f0fe; border: 2px dashed #1a73e8; border-radius: 8px; padding: 30px; text-align: center; margin: 12px 0; color: #1a73e8; font-size: 14px; }
+.image-placeholder .big-icon { font-size: 40px; display: block; margin-bottom: 8px; }
+
+.copy-box { background: #f0f0f0; padding: 14px 18px; border-radius: 6px; font-family: monospace; font-size: 13px; border: 1px solid #ddd; word-break: break-all; margin: 12px 0; }
+.copy-box .label { color: #888; font-weight: bold; }
+.copy-box .value { color: #1a73e8; }
+
+.footer { text-align: center; color: #999; font-size: 13px; margin-top: 40px; padding: 20px; border-top: 1px solid #eee; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>获取 Cookie 详细指南</h1>
+<p class="subtitle">照着下面 6 步做，每一步都配了示意图</p>
+
+<!-- Step 1 -->
+<div class="step">
+  <span class="step-num">1</span>
+  <h2>打开微博并登录</h2>
+  <p>用 Chrome 浏览器打开 <strong>https://m.weibo.cn</strong></p>
+  <p>输入账号密码登录，或用微博 App 扫码登录。</p>
+  <div class="highlight">确保登录成功，能看到微博首页内容后再进行下一步。</div>
+</div>
+
+<!-- Step 2 -->
+<div class="step">
+  <span class="step-num">2</span>
+  <h2>按 F12 打开开发者工具</h2>
+  <p>按键盘上的 <span class="key">F12</span> 键。</p>
+  <p>如果按了没反应（部分笔记本），请同时按 <span class="key">Fn</span> + <span class="key">F12</span>。</p>
+  <p>屏幕上会出现一个很大的面板（在右侧或底部），这就是开发者工具。</p>
+  <div class="image-placeholder">
+    <span class="big-icon">🖥️</span>
+    按 F12 后，屏幕右侧或下方会出现这个面板
+  </div>
+</div>
+
+<!-- Step 3 -->
+<div class="step">
+  <span class="step-num">3</span>
+  <h2>找到并点击 Network 标签</h2>
+  <p>在开发者工具面板的最顶部，有一行标签：</p>
+  <div class="devtools">
+    <div class="devtools-header">
+      <span class="devtool-tab">Elements</span>
+      <span class="devtool-tab">Console</span>
+      <span class="devtool-tab">Sources</span>
+      <span class="devtool-tab highlight-tab">Network</span>
+      <span class="devtool-tab">Performance</span>
+      <span class="devtool-tab">>></span>
+    </div>
+  </div>
+  <p>点击 <strong>Network</strong>（网络）标签。</p>
+  <div class="highlight">如果看不到 Network，点顶部最右边的 <strong>>></strong> 展开更多标签。</div>
+</div>
+
+<!-- Step 4 -->
+<div class="step">
+  <span class="step-num">4</span>
+  <h2>刷新页面</h2>
+  <p>按 <span class="key">F5</span> 或者 <span class="key">Ctrl</span> + <span class="key">R</span> 刷新页面。</p>
+  <p>刷新后，Network 标签里会出现一列请求列表（文件名列表）:</p>
+  <div class="devtools">
+    <div class="devtools-header">
+      <span class="devtool-tab highlight-tab">Network</span>
+    </div>
+    <div class="devtools-row">
+      <div class="devtools-requests">
+        <div class="request-item active">getIndex?type=uid... </div>
+        <div class="request-item">getIndex?type=uid... </div>
+        <div class="request-item">statuses/show...   </div>
+        <div class="request-item">profile/info...    </div>
+        <div class="request-item">sax?       </div>
+      </div>
+      <div class="devtools-detail">
+        <div class="header-section">
+          <div class="header-section-title">Request Headers （请求头）</div>
+          <div class="header-label">User-Agent:</div>
+          <div class="header-label">Accept:</div>
+          <div class="header-label" style="color:#f00;font-weight:bold;">Cookie: <span class="header-value" style="color:#f00;">WEIBOCN_FROM=111000...</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p>点击左侧 <strong>第一个请求</strong>（通常是 getIndex 开头的）。</p>
+</div>
+
+<!-- Step 5 -->
+<div class="step">
+  <span class="step-num">5</span>
+  <h2>复制 Cookie</h2>
+  <p>点击第一个请求后，右侧会显示详情。找到 <strong>Request Headers</strong> 区域。</p>
+  <p>往下翻，找到以 <strong>Cookie:</strong> 开头的那一行。</p>
+  <div class="highlight">
+    你会看到类似这样的内容（很长，这只是示例）：
+    <div class="copy-box" style="margin-top:8px;">
+      <span class="label">Cookie: </span>
+      <span class="value">WEIBOCN_FROM=1110006030; SUB=_2A25HTz9VDe...; SCF=AuFGshw6x...; SUBP=0033WrSXqPxf...; SSOLoginState=1783320325; ...</span>
+    </div>
+  </div>
+  <p><strong>选中 Cookie: 后面的全部内容</strong>（从 WEIBOCN_FROM 开始到最后），右键复制。</p>
+  <p style="margin-top:12px;color:#e74c3c;font-weight:bold;">
+    ⚠️ 注意：只复制 Cookie: 后面的内容，不要复制 "Cookie: " 这几个字。
+  </p>
+</div>
+
+<!-- Step 6 -->
+<div class="step">
+  <span class="step-num">6</span>
+  <h2>粘贴到配置文件</h2>
+  <p>打开文件夹中的 <strong>data\config.yaml</strong> 文件（用记事本打开）。</p>
+  <p>找到这行：</p>
+  <div class="copy-box">
+    <span class="label">cookie: </span><span class="value">""</span>
+  </div>
+  <p>改成（把刚才复制的内容粘贴到引号中间）：</p>
+  <div class="copy-box">
+    <span class="label">cookie: </span><span class="value">"WEIBOCN_FROM=1110006030; SUB=_2A25HTz9VDe...（你复制的内容）"</span>
+  </div>
+  <p>保存文件（按 <span class="key">Ctrl</span> + <span class="key">S</span>）。</p>
+  <div class="highlight">
+    ✅ 大功告成！现在双击 <strong>start.bat</strong> 启动服务吧！
+  </div>
+</div>
+
+<!-- 验证 -->
+<div class="step" style="background: #e8f5e9;">
+  <span class="step-num">✓</span>
+  <h2>验证是否成功</h2>
+  <p>双击 start.bat 启动后，浏览器打开 <strong>http://127.0.0.1:5000</strong></p>
+  <p>如果看到仪表盘页面，并且状态显示"已配置"，就说明 Cookie 填对了！</p>
+  <p>点击「启动监控」→ 开始自动抓取微博。</p>
+</div>
+
+<!-- FAQ -->
+<div class="step">
+  <h2 style="font-size:18px;">❓ 常见问题</h2>
+  <div style="margin-top:12px;">
+    <p style="font-weight:bold;">Q: 我找不到 Network 标签怎么办？</p>
+    <p>A: 按 F12 后，如果顶部没有 Network，点最右边的 >> 展开全部标签。</p>
+  </div>
+  <div style="margin-top:12px;">
+    <p style="font-weight:bold;">Q: 我点了第一个请求，但没有看到 Cookie？</p>
+    <p>A: 点其他请求试试。或者点刷新按钮右侧的小箭头 → 点第一个请求</p>
+  </div>
+  <div style="margin-top:12px;">
+    <p style="font-weight:bold;">Q: Cookie 填写后保存，但页面还是说未配置？</p>
+    <p>A: 先关掉 start.bat 窗口，重新双击 start.bat 启动一次。</p>
+  </div>
+  <div style="margin-top:12px;">
+    <p style="font-weight:bold;">Q: Cookie 里有中文或特殊符号，需要处理吗？</p>
+    <p>A: 不需要。直接复制粘贴即可。</p>
+  </div>
+  <div style="margin-top:12px;">
+    <p style="font-weight:bold;">Q: 之前能用的，突然抓不到微博了？</p>
+    <p>A: Cookie 过期了。从第 1 步重新来一遍，获取新的 Cookie 填进去。</p>
+  </div>
+</div>
+
+<div class="footer">
+  Weibo Watcher v1.0 - 微博监控器
+</div>
+
+</div>
+</body>
+</html>

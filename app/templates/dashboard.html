@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">📊 监控状态</h4>
+                <div class="row mt-3">
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="border rounded p-3 text-center">
+                            <div class="h2 mb-0" id="totalPosts">{{ stats.total_seen }}</div>
+                            <small class="text-muted">已捕获微博</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="border rounded p-3 text-center">
+                            <div class="h2 mb-0" id="deletedCount">{{ stats.total_deleted }}</div>
+                            <small class="text-muted">检测到删帖</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="border rounded p-3 text-center">
+                            <div class="h2 mb-0" id="checkCount">{{ stats.check_count or 0 }}</div>
+                            <small class="text-muted">检查次数</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="border rounded p-3 text-center">
+                            <div id="statusIndicator" class="h4 mb-0">
+                                {% if stats.is_running %}
+                                    {% if stats.is_paused %}
+                                        <span class="text-warning">⏸️ 已暂停</span>
+                                    {% else %}
+                                        <span class="text-success">▶️ 运行中</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-secondary">⏹️ 已停止</span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">监控状态</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <small class="text-muted">最后检查: </small>
+                    <span id="lastCheck">{{ stats.last_check or '从未' }}</span>
+                    {% if stats.error %}
+                        <span class="badge bg-danger ms-2">⚠️ {{ stats.error }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="mt-3 btn-group">
+                    {% if not configured %}
+                        <a href="/config" class="btn btn-primary">⚙️ 去配置</a>
+                    {% else %}
+                        {% if stats.is_running and not stats.is_paused %}
+                            <button class="btn btn-warning" onclick="control('pause')">⏸️ 暂停</button>
+                            <button class="btn btn-danger" onclick="control('stop')">⏹️ 停止</button>
+                        {% elif stats.is_running and stats.is_paused %}
+                            <button class="btn btn-success" onclick="control('resume')">▶️ 恢复</button>
+                            <button class="btn btn-danger" onclick="control('stop')">⏹️ 停止</button>
+                        {% else %}
+                            <button class="btn btn-success" onclick="control('start')">▶️ 启动监控</button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>📄 最近微博</span>
+                <a href="/feed" class="btn btn-sm btn-outline-primary">查看全部 →</a>
+            </div>
+            <div class="card-body">
+                {% if stats.recent_posts %}
+                    <ul class="list-group list-group-flush">
+                    {% for pid, ptime, ptext in stats.recent_posts %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="/post/{{ pid }}">{{ ptext[:40] }}{% if ptext|length > 40 %}…{% endif %}</a>
+                            <small class="text-muted">{{ ptime }}</small>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted mb-0">暂无微博存档。启动监控后将自动抓取。</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">💡 使用提示</div>
+            <div class="card-body">
+                <ol class="mb-0 ps-3">
+                    <li class="mb-2">先到 <a href="/config">设置页面</a> 填入 UID 和 Cookie</li>
+                    <li class="mb-2">回到仪表盘点击「启动监控」</li>
+                    <li class="mb-2">监控启动后，新微博会自动保存到本地</li>
+                    <li class="mb-2">去 <a href="/feed">微博存档</a> 查看捕获的内容</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function control(action) {
+    fetch('/api/control/' + action).then(r => r.json()).then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    });
+}
+
+// 每 5 秒自动刷新状态（递归 setTimeout，避免请求堆积）
+function pollStatus() {
+    fetch('/api/status').then(r => r.json()).then(s => {
+        document.getElementById('totalPosts').textContent = s.total_seen;
+        document.getElementById('deletedCount').textContent = s.total_deleted;
+        document.getElementById('lastCheck').textContent = s.last_check || '从未';
+        if (s.error) {
+            document.getElementById('statusIndicator').innerHTML = '<span class="text-danger">⚠️ 异常</span>';
+        } else if (s.is_paused) {
+            document.getElementById('statusIndicator').innerHTML = '<span class="text-warning">⏸️ 已暂停</span>';
+        } else if (s.is_running) {
+            document.getElementById('statusIndicator').innerHTML = '<span class="text-success">▶️ 运行中</span>';
+        }
+        document.getElementById('checkCount').textContent = s.check_count || 0;
+    }).finally(() => setTimeout(pollStatus, 5000));
+}
+pollStatus();
+</script>
+{% endblock %}

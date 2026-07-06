@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header"><h4 class="mb-0">⚙️ 监控设置</h4></div>
+            <div class="card-body">
+                <form method="POST" id="configForm">
+                    <div class="mb-3">
+                        <label class="form-label">👤 微博用户 UID <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control font-monospace" name="uid"
+                               value="{{ config.uid }}" placeholder="例如: 1234567890">
+                        <div class="form-text">
+                            如何获取？打开微博 → 进入用户主页 → URL 中 /u/ 后面的数字
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">🔑 Cookie <span class="text-danger">*</span></label>
+                        <textarea class="form-control font-monospace" name="cookie" rows="3"
+                                  placeholder="SUB=_2A25...">{% if config.cookie and config.cookie != '' %}{{ config.cookie }}{% endif %}</textarea>
+                        <div class="form-text">
+                            <strong>获取步骤：</strong>
+                            <ol class="mb-0 mt-1">
+                                <li>用 Chrome 打开 <code>https://m.weibo.cn</code> 并登录</li>
+                                <li>按 <kbd>F12</kbd> → Network 标签 → 刷新页面</li>
+                                <li>点任意请求 → Request Headers → 找到 <code>Cookie:</code> 那一行</li>
+                                <li>整段复制粘贴到上面</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">⏱️ 检查间隔（秒）</label>
+                            <input type="number" class="form-control" name="poll_interval"
+                                   value="{{ config.poll_interval }}" min="10" max="300">
+                            <div class="form-text">建议 30 秒，太快会被限流</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">📄 拉取页数</label>
+                            <input type="number" class="form-control" name="max_pages"
+                                   value="{{ config.max_pages }}" min="1" max="5">
+                            <div class="form-text">每页 20 条，建议 1-2 页</div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex">
+                        <button type="submit" class="btn btn-primary px-4">💾 保存并重启监控</button>
+                        <a href="/" class="btn btn-outline-secondary px-4">← 返回仪表盘</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if config.uid or config.cookie %}
+        <div class="card mt-3">
+            <div class="card-header">📋 当前配置摘要</div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr><td style="width:120px">UID</td><td><code>{{ config.uid or '未设置' }}</code></td></tr>
+                    <tr><td>Cookie</td><td><code>{{ config.cookie[:10] + '***' + config.cookie[-4:] if config.cookie and config.cookie|length > 14 else (config.cookie[:10] + '...' if config.cookie else '未设置') }}</code></td></tr>
+                    <tr><td>间隔</td><td>{{ config.poll_interval }} 秒</td></tr>
+                    <tr><td>页数</td><td>{{ config.max_pages }} 页</td></tr>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('configForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = e.target;
+    fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            window.location.href = '/';
+        } else {
+            alert('❌ ' + (data.message || '保存失败'));
+        }
+    }).catch(() => alert('❌ 保存失败，请重试'));
+});
+</script>
+{% endblock %}

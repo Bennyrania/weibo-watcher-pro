@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-12 mb-3">
+        <a href="/feed" class="btn btn-outline-secondary btn-sm">← 返回列表</a>
+        <span class="ms-2 font-monospace text-muted">#{{ post.id }}</span>
+    </div>
+
+    <div class="col-12 mb-3">
+        <div class="card">
+            <div class="card-body">
+                {# 完整内容 #}
+                <div class="mb-3" style="white-space: pre-wrap; word-break: break-word; line-height: 1.7;">
+                    {{ content }}
+                </div>
+
+                {# 元信息 #}
+                <hr>
+                <div class="row text-muted small">
+                    <div class="col-md-3 mb-1">
+                        <span class="fw-medium">发布时间</span><br>
+                        {{ post.created_at }}
+                    </div>
+                    <div class="col-md-3 mb-1">
+                        <span class="fw-medium">存档时间</span><br>
+                        {{ post.archived_at }}
+                    </div>
+                    <div class="col-md-3 mb-1">
+                        <span class="fw-medium">所在文件</span><br>
+                        📁 {{ post.week_file }}
+                    </div>
+                    <div class="col-md-3 mb-1">
+                        <span class="fw-medium">互动数据</span><br>
+                        {% if post.reposts > 0 %}🔄 {{ post.reposts }} 转发{% endif %}
+                        {% if post.comments > 0 %} 💬 {{ post.comments }} 评论{% endif %}
+                        {% if post.likes > 0 %} ❤️ {{ post.likes }} 点赞{% endif %}
+                        {% if post.pics > 0 %} 🖼️ {{ post.pics }} 图{% endif %}
+                        {% if post.reposts == 0 and post.comments == 0 and post.likes == 0 and post.pics == 0 %}
+                            <span class="text-muted">暂无互动数据</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

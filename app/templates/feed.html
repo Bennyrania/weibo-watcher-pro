@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">微博存档</h4>
+    <span class="text-muted">共 {{ total }} 条</span>
+</div>
+
+{% if posts %}
+<div class="list-group mb-3">
+    {% for post in posts %}
+    <a href="/post/{{ post.id }}" class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+            <small class="text-muted">{{ post.created_at }}</small>
+            <small class="text-muted">
+                {% if post.pics > 0 %}{{ post.pics }}图 {% endif %}
+                {% if post.reposts > 0 %}{{ post.reposts }}转{% endif %}
+            </small>
+        </div>
+        <p class="mb-1 mt-1 text-break">{{ post.text_preview }}</p>
+        <small class="text-muted">📁 {{ post.week_file }}</small>
+    </a>
+    {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if page > 1 %}
+        <li class="page-item"><a class="page-link" href="?page={{ page - 1 }}">上一页</a></li>
+        {% endif %}
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+            <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+            {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
+            <li class="page-item"><a class="page-link" href="?page={{ p }}">{{ p }}</a></li>
+            {% elif p == 4 or p == total_pages - 3 %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        {% if page < total_pages %}
+        <li class="page-item"><a class="page-link" href="?page={{ page + 1 }}">下一页</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5">
+    <div class="h1 mb-3">📭</div>
+    <p class="text-muted">暂无微博存档。</p>
+    <a href="/" class="btn btn-primary">返回仪表盘启动监控</a>
+</div>
+{% endif %}
+{% endblock %}

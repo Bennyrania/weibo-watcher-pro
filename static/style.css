@@ -1,0 +1,30 @@
+/* 微博监控器 - 自定义样式 */
+
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    border: none;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+.log-viewer pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+.badge {
+    font-weight: 500;
+}
