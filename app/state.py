@@ -52,7 +52,7 @@ def add_to_index(post: dict, week_file: str):
         "id": post["weibo_id"],
         "created_at": post["created_at"],
         "archived_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "text_preview": post["text"][:120] if post.get("text") else "(纯图片/转发)",
+        "text_preview": post["text"] if post.get("text") else "(纯图片/转发)",
         "week_file": week_file,
         "pics": len(post.get("pics", [])),
         "reposts": post.get("reposts", 0),

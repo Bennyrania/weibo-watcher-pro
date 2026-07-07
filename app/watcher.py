@@ -159,6 +159,11 @@ class WatcherThread(threading.Thread):
         new_posts = []
         for post in all_posts:
             if not is_seen(state, post["weibo_id"]):
+                # 获取完整正文（微博API只返回前140字）
+                full_text = self._fetch_full_text(session, post["weibo_id"])
+                if full_text:
+                    post["text"] = full_text
+
                 mark_seen(state, post["weibo_id"], {
                     "seen_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "text": post["text"][:200],
@@ -223,6 +228,26 @@ class WatcherThread(threading.Thread):
             "comments": mblog.get("comments_count", 0),
             "likes": mblog.get("attitudes_count", 0),
         }
+
+    def _fetch_full_text(self, session, weibo_id):
+        """通过微博 extend API 获取完整正文"""
+        try:
+            url = f"https://m.weibo.cn/statuses/extend?id={weibo_id}"
+            resp = session.get(url, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            if data.get("ok") == 1:
+                full = data.get("data", {}).get("longTextContent", "")
+                if full:
+                    # 清理 HTML 标签
+                    full = re.sub(r"<br\s*/?>", "\n", full)
+                    full = re.sub(r"</?\w+[^>]*>", "", full)
+                    full = full.replace("&nbsp;", " ").replace("&amp;", "&")
+                    full = full.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", '"')
+                    return full.strip()
+        except Exception:
+            pass
+        return None
 
     def _save_post(self, post, cfg):
         """
