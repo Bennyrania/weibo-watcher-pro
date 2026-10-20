@@ -35,4 +35,4 @@ if defined FOUND (
     echo ============================================
 )
 echo.
-timeout /t 5 /nobreak >nul
+ping -n 6 127.0.0.1 >nul

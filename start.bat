@@ -1,5 +1,4 @@
 @echo off
-setlocal enabledelayedexpansion
 title Weibo Watcher
 
 echo ============================================
@@ -12,11 +11,6 @@ set "ROOT=%~dp0"
 cd /d "%ROOT%"
 
 set "PORT=5000"
-
-:: Timestamp via PowerShell (Chinese Windows %DATE% format breaks substring tricks)
-for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format 'yyyyMMdd_HHmmss'"') do set "TS=%%i"
-if not exist "%ROOT%logs" mkdir "%ROOT%logs"
-set "LF=%ROOT%logs\start_%TS%.log"
 
 :: -- 1. Check virtual environment
 set "PYTHON_CMD="
@@ -44,32 +38,40 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%PORT% " ^| findstr "LISTEN
     taskkill /F /PID %%a >nul 2>&1
 )
 
-:: -- 4. Launch in background (pythonw has no console, keeps running after this window closes)
+:: -- 4. Launch detached. Two traps, both learned the hard way:
+::      (a) `start /b` inherits the caller's stdio handles -> hangs any pipe/shell that launched us
+::      (b) redirecting pythonw's output with `>` makes cmd WAIT for the GUI process to exit
+::      So: plain `start` (fresh process env, no inherited handles) and no redirection.
+::      Runtime logs still land in logs\server.log via Python's logging FileHandler.
 echo Starting service on port %PORT% ...
-start "" /b "%PYTHON_CMD%" -m app.main
+start "" "%PYTHON_CMD%" -m app.main
 
-:: -- 5. Health check: wait up to 20s for the port to actually listen
+:: -- 5. Health check: wait up to ~20s for the port to actually listen
+::      (goto loop rather than a for-block, so %OK% expands correctly without
+::       enabling delayed expansion -- which would eat the "!" in messages below)
 set "OK="
-for /l %%i in (1,1,20) do (
-    if not defined OK (
-        ping -n 2 127.0.0.1 >nul
-        for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":%PORT% " ^| findstr "LISTENING"') do set "OK=%%p"
-    )
-)
+set "TRIES=0"
+:waitloop
+if defined OK goto launch_ok
+set /a TRIES+=1
+if %TRIES% GTR 20 goto launch_fail
+ping -n 2 127.0.0.1 >nul
+for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":%PORT% " ^| findstr "LISTENING"') do set "OK=%%p"
+goto waitloop
 
-if defined OK (
-    echo.
-    echo ============================================
-    echo    Service started!   PID !OK!
-    echo    http://127.0.0.1:%PORT%
-    echo.
-    echo    To stop: double-click stop.bat
-    echo ============================================
-    start http://127.0.0.1:%PORT%
-    timeout /t 3 /nobreak >nul
-    exit /b 0
-)
+:launch_ok
+echo.
+echo ============================================
+echo    Service started!  PID: %OK%
+echo    http://127.0.0.1:%PORT%
+echo.
+echo    To stop: double-click stop.bat
+echo ============================================
+start http://127.0.0.1:%PORT%
+ping -n 4 127.0.0.1 >nul
+exit /b 0
 
+:launch_fail
 :: -- 6. Startup failed: print something actionable
 echo.
 echo ============================================
@@ -78,9 +80,9 @@ echo.
 echo    Log: %ROOT%logs\server.log
 echo.
 echo    Common causes:
-echo      - dependencies missing       --^> run install.bat
-echo      - port %PORT% held by another app --^> run stop.bat
-echo      - broken data\config.yaml    --^> check the Cookie line format
+echo      - dependencies missing            --^> run install.bat
+echo      - port %PORT% held by another app  --^> run stop.bat
+echo      - broken data\config.yaml         --^> check the Cookie line format
 echo ============================================
 echo.
 if exist "%ROOT%logs\server.log" powershell -NoProfile -Command "Get-Content -Tail 15 -Encoding UTF8 '%ROOT%logs\server.log'" 2>nul
