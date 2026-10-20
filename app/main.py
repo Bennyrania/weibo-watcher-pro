@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request, send_from_directory, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import load_config, save_config, is_configured, ensure_dirs, LOGS_DIR, POSTS_DIR, DATA_DIR
 from .state import get_stats, get_index_page, search_index_by_id
@@ -25,6 +26,7 @@ logger = logging.getLogger("weibo-watcher")
 
 # ── Flask ──
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_prefix=1)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # ── 全局监控线程 ──
